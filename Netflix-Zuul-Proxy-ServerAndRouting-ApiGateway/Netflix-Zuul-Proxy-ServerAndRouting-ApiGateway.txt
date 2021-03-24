@@ -1,0 +1,84 @@
+10-06-2020:
+
+Zuul proxy server:
+  
+*UI applications has to send requests to the diffrent microservices directly.
+*Whenever host or port of microservice is changed in cloud, Then every time changes are required in UI application also.
+*If the code is refactored by merging two services together as a single service then again the changes are required in UI application.
+*The solution is create Api gateway between UI application and Microservices.
+*UI application sends requst to the gateway server and it forwords the request to the appropriate microservices.
+*spring cloud netflix zuul component can be used to create Gateway server.
+*API Gateway routes request to appropriate microservices, when a request comes from the client.
+*Zuul registers with eureka, so it can find host and port of the services from eureka.
+*Zuul comes with ribbon for load balancing requests accross multiple instances of a service.
+
+Test with postMan:
+http://localhost:9991/user/Netflix/viewProfile/9492011956
+http://localhost:9991/plan/Netflix/getAllPlans
+http://localhost:9991/device/Netflix/devices/9492011956
+
+http://localhost:9991/user/Netflix/user/register  Post    
+
+{
+"phoneNor":"9492011124",
+"userName":"Nagagiri",
+"password":"nagagiri",
+"email":"nagagirigollapali@gmail.com",
+"planId":"Netflix-Basic"
+}
+
+Note:If any exception occures at that time of sending request zuul 500 exceptions just refresh url once its working fine...
+
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableZuulProxy
+
+application.properties
+--------------------------------------------------------------------------------------------------------------
+#server properties
+server.port=9991
+
+# Eureka client config
+eureka.client.service-url.defaultZone= http://localhost:5551/eureka
+spring.application.name=ZuulProxyServer
+
+--------------------------------------------------------------------------------------------------------------
+
+application.yml
+--------------------------------------------------------------------------------------------------------------
+zuul:
+    sslHostnameValidationEnabled: false
+    ignoredServices: "*"
+    routes:
+        customer-services:
+          path: /user/**
+          serviceId: NETFLIX-STREAMING-USER
+        friend-services:
+          path: /device/**
+          serviceId: NETFLIX-STREAMING-DEVICE
+        plan-services:
+          path: /plan/**
+          serviceId: NETFLIX-STREAMING-PLAN
+    host:
+      time-to-live: -1
+      connect-timeout-millis: 5000
+      max-per-route-connections: 10000
+      max-total-connections: 5000
+      socket-timeout-millis: 60000
+    semaphore:
+      max-semaphores: 500 
+
+-------------------------------------------------------------------------------------------------------------- 
+
+In pom.xml:
+                <dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+		</dependency>     
+
+
